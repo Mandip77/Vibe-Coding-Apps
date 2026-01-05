@@ -1,1 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe Studio | AI Startup Architect</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, query, addDoc, deleteDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+        window.fb = { initializeApp, getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken, getFirestore, collection, doc, getDoc, setDoc, onSnapshot, query, addDoc, deleteDoc, updateDoc, increment };
+    </script>
 
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap');
+        :root { --bg-main: #F5F5F4; --bg-card: #FFFFFF; --text-main: #292524; --accent: #EA580C; --border: #E7E5E4; }
+        .theme-sunset { --bg-main: #0C0A09; --bg-card: #1C1917; --text-main: #FAFAF9; --accent: #F97316; --border: #44403C; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg-main); color: var(--text-main); transition: background-color 0.5s ease, color 0.5s ease; }
+        .vibe-card { background-color: var(--bg-card); border: 1px solid var(--border); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .vibe-card:hover { transform: translateY(-6px); border-color: var(--accent); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+        .spinner { border: 2px solid rgba(234, 88, 12, 0.1); width: 20px; height: 20px; border-radius: 50%; border-left-color: var(--accent); animation: spin 0.8s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .tab-btn { position: relative; padding: 0.5rem 1rem; font-weight: 700; color: #A8A29E; transition: all 0.2s; }
+        .tab-btn.active { color: var(--accent); }
+        .tab-btn.active::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 2px; background-color: var(--accent); }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <nav class="sticky top-0 z-50 border-b border-stone-200/50 bg-white/80 dark:bg-stone-900/80 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center text-white font-black text-xl">V</div>
+                <span class="font-extrabold tracking-tighter text-xl">VIBE STUDIO</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSettings()" class="text-stone-400 hover:text-orange-600 text-sm font-bold flex items-center gap-2">
+                    <span id="key-status-icon">🔴</span> API Settings
+                </button>
+                <button onclick="toggleTheme()" class="px-4 py-2 rounded-full border border-stone-200 dark:border-stone-700 text-xs font-bold">Theme</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- API Key Settings Panel -->
+    <div id="settings-panel" class="hidden bg-orange-50 dark:bg-stone-800 border-b border-orange-100 dark:border-stone-700 p-6 animate-fade-in">
+        <div class="max-w-xl mx-auto space-y-4">
+            <div class="flex justify-between items-center">
+                <h4 class="font-bold text-sm uppercase tracking-widest text-orange-600">Gemini API Configuration</h4>
+                <button onclick="toggleSettings()" class="text-stone-400">&times;</button>
+            </div>
+            <p class="text-xs text-stone-500">Your key is stored locally in your browser and never sent to our servers.</p>
+            <div class="flex gap-2">
+                <input type="password" id="api-key-input" placeholder="Enter your Gemini API Key..." class="flex-grow p-3 rounded-xl border border-stone-200 dark:border-stone-600 bg-white dark:bg-stone-900 text-sm outline-none focus:ring-2 focus:ring-orange-500">
+                <button onclick="saveApiKey()" class="px-6 py-3 bg-orange-600 text-white rounded-xl font-bold text-sm">Save Key</button>
+            </div>
+        </div>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-6 py-12 space-y-24">
+        <!-- Lab -->
+        <section id="ai-lab" class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div class="space-y-6">
+                <h3 class="text-4xl font-extrabold tracking-tighter">AI Blueprint Lab</h3>
+                <p class="text-stone-500">Enter your vibe to architect a startup. Requires an API key in settings.</p>
+                <div class="flex flex-col gap-4">
+                    <textarea id="ai-lab-prompt" rows="3" placeholder="Describe your project vibe..." class="p-5 rounded-2xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 outline-none focus:ring-4 focus:ring-orange-500/10"></textarea>
+                    <button onclick="generateCustomBlueprint()" id="lab-gen-btn" class="w-full py-4 bg-stone-900 dark:bg-orange-600 text-white rounded-2xl font-bold text-lg">Generate Blueprint ✨</button>
+                </div>
+            </div>
+            <div id="lab-result-area" class="min-h-[300px] flex items-center justify-center border-2 border-dashed border-stone-200 rounded-[2rem] p-8 text-stone-400 text-center">
+                No blueprint yet.<br>Ensure your API key is set in "API Settings" above.
+            </div>
+        </section>
+
+        <!-- Tabs -->
+        <section class="space-y-12 pb-24">
+            <div class="flex items-center gap-8 border-b border-stone-200 dark:border-stone-800">
+                <button onclick="switchTab('showcase')" id="tab-showcase" class="tab-btn active">Showcase</button>
+                <button onclick="switchTab('vault')" id="tab-vault" class="tab-btn">Vault</button>
+            </div>
+            <div id="view-showcase" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+            <div id="view-vault" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+        </section>
+    </main>
+
+    <script type="module">
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'vibe-studio-prod';
+        const app = fb.initializeApp(firebaseConfig);
+        const auth = fb.getAuth(app);
+        const db = fb.getFirestore(app);
+        let user = null;
+
+        // API Key Logic
+        window.getApiKey = () => localStorage.getItem('GEMINI_API_KEY') || "";
+        window.saveApiKey = () => {
+            const val = document.getElementById('api-key-input').value;
+            localStorage.setItem('GEMINI_API_KEY', val);
+            updateKeyStatus();
+            alert("API Key saved locally!");
+            toggleSettings();
+        };
+        const updateKeyStatus = () => {
+            const hasKey = !!getApiKey();
+            document.getElementById('key-status-icon').innerText = hasKey ? "🟢" : "🔴";
+            document.getElementById('api-key-input').value = getApiKey();
+        };
+
+        // --- AUTH ---
+        fb.onAuthStateChanged(auth, (u) => {
+            user = u;
+            if (user) {
+                subscribeVault();
+                subscribeShowcase();
+                updateKeyStatus();
+            }
+        });
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            fb.signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+            fb.signInAnonymously(auth);
+        }
+
+        // --- GEMINI ---
+        window.generateCustomBlueprint = async () => {
+            const key = getApiKey();
+            if (!key) { toggleSettings(); return; }
+            const prompt = document.getElementById('ai-lab-prompt').value;
+            const resArea = document.getElementById('lab-result-area');
+            const btn = document.getElementById('lab-gen-btn');
+            
+            btn.disabled = true; btn.innerText = "Architecting...";
+            resArea.innerHTML = `<div class="spinner"></div>`;
+
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${key}`;
+                const payload = {
+                    contents: [{ parts: [{ text: prompt }] }],
+                    systemInstruction: { parts: [{ text: "Return JSON: { title, category, description, stack:[], money:[], steps:[] }" }] },
+                    generationConfig: { responseMimeType: "application/json" }
+                };
+                const res = await fetch(url, { method: 'POST', body: JSON.stringify(payload) });
+                if (!res.ok) throw new Error();
+                const json = await res.json();
+                const data = JSON.parse(json.candidates[0].content.parts[0].text);
+                
+                resArea.innerHTML = `
+                    <div class="bg-white dark:bg-stone-900 border border-orange-600/20 p-8 rounded-3xl text-left w-full shadow-xl animate-fade-in">
+                        <h4 class="text-2xl font-black">${data.title}</h4>
+                        <p class="text-stone-500 text-sm mt-2">${data.description}</p>
+                        <div class="flex gap-2 mt-6">
+                            <button onclick='window.saveVault(${JSON.stringify(data).replace(/'/g, "&apos;")})' class="flex-grow py-3 bg-stone-900 text-white rounded-xl font-bold">Save to Vault</button>
+                        </div>
+                    </div>`;
+            } catch (e) { resArea.innerHTML = "Error. Check your API key."; }
+            btn.disabled = false; btn.innerText = "Generate Blueprint ✨";
+        };
+
+        // --- FIREBASE OPS ---
+        window.saveVault = async (data) => {
+            await fb.addDoc(fb.collection(db, 'artifacts', appId, 'users', user.uid, 'vault'), { ...data, createdAt: Date.now() });
+            alert("Saved!");
+        };
+        const subscribeVault = () => {
+            fb.onSnapshot(fb.collection(db, 'artifacts', appId, 'users', user.uid, 'vault'), (snap) => {
+                const items = []; snap.forEach(d => items.push(d.data()));
+                document.getElementById('view-vault').innerHTML = items.map(i => `<div class="vibe-card p-6 rounded-3xl"><h4 class="font-bold">${i.title}</h4><p class="text-sm text-stone-500">${i.description}</p></div>`).join('');
+            });
+        };
+        const subscribeShowcase = () => {
+            fb.onSnapshot(fb.collection(db, 'artifacts', appId, 'public', 'data', 'showcase'), (snap) => {
+                const items = []; snap.forEach(d => items.push(d.data()));
+                document.getElementById('view-showcase').innerHTML = items.map(i => `<div class="vibe-card p-6 rounded-3xl"><h4 class="font-bold">${i.title}</h4><p class="text-sm text-stone-500">${i.description}</p></div>`).join('');
+            });
+        };
+
+        // UI
+        window.toggleSettings = () => document.getElementById('settings-panel').classList.toggle('hidden');
+        window.switchTab = (id) => {
+            document.getElementById('view-showcase').classList.toggle('hidden', id !== 'showcase');
+            document.getElementById('view-vault').classList.toggle('hidden', id !== 'vault');
+            document.getElementById('tab-showcase').classList.toggle('active', id === 'showcase');
+            document.getElementById('tab-vault').classList.toggle('active', id === 'vault');
+        };
+        window.toggleTheme = () => document.body.classList.toggle('theme-sunset');
+    </script>
+</body>
+</html>
