@@ -1,0 +1,25 @@
+{
+    "name": "ai-repurpose-server",
+    "version": "1.0.0",
+    "description": "Backend for AI Content Repurpose App",
+    "main": "server.js",
+    "type": "module",
+    "scripts": {
+        "start": "node server.js",
+        "dev": "node --watch server.js"
+    },
+    "dependencies": {
+        "express": "^4.18.2",
+        "cors": "^2.8.5",
+        "dotenv": "^16.3.1",
+        "axios": "^1.6.2",
+        "stripe": "^14.5.0",
+        "cheerio": "^1.0.0-rc.12",
+        "user-agents": "^1.0.1417",
+        "youtube-transcript": "^1.0.6",
+        "youtubei.js": "^1.4.3",
+        "@supabase/supabase-js": "^2.38.4",
+        "@google/generative-ai": "^0.1.3",
+        "openai": "^4.24.1"
+    }
+}
