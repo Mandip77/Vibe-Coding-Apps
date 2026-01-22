@@ -40,7 +40,7 @@
 <h2 align="center"><span style="color:#00E6FE">🌈 Why Vibe-Coding-Apps?</span></h2>
 
 <ul>
-  <li>🎨 <b>Creative & Fun:</b> Each app is designed for maximum vibes—and maximum learning!</li>
+  <li>🎨 <b>Creative & Fun:</b> Each app is designed for maximum vibes-and maximum learning!</li>
   <li>💬 <b>Community Driven:</b> Open to ideas, collabs, and new trends.</li>
   <li>🌐 <b>Modern Stack:</b> Built with cutting-edge tools & best practices.</li>
   <li>✨ <b>Always Evolving:</b> New apps, new features, new trends—always!</li>
